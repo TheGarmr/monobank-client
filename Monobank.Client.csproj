@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<PackageId>MonobankClient</PackageId>
+		<Authors>The Garmr</Authors>
+		<Company>The Garmr</Company>
+		<Description>Monobank.ua API client</Description>
+		<Copyright>Copyright 2022</Copyright>
+		<PackageProjectUrl>https://github.com/thegarmr/monobank-client</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/thegarmr/monobank-client</RepositoryUrl>
+		<PackageVersion>1.0.0</PackageVersion>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ISO.4217.CurrencyCodes" Version="1.0.10" />
+		<PackageReference Include="Macross.Json.Extensions" Version="2.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
+		<PackageReference Include="System.Text.Json" Version="6.0.0" />
+	</ItemGroup>
+
+</Project>
