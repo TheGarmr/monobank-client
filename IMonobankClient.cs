@@ -8,9 +8,9 @@ namespace Monobank.Client
 {
     public interface IMonobankClient
     {
-        Task<UserInfo> GetClientInfoAsync(string token, CancellationToken cancellationToken);
-        Task<ICollection<Statement>> GetStatementsAsync(DateTime from, DateTime to, string account = "0");
-        Task<bool> SetWebhookAsync(string url, string token, CancellationToken cancellationToken);
-        Task<ICollection<CurrencyInfo>> GetCurrenciesAsync(CancellationToken cancellationToken);
+        Task<UserInfo> GetClientInfoAsync(string token, CancellationToken cancellationToken = default);
+        Task<ICollection<Statement>> GetStatementsAsync(string token, DateTime from, DateTime to, string account = "0", CancellationToken cancellationToken = default);
+        Task<bool> SetWebhookAsync(string url, string token, CancellationToken cancellationToken = default);
+        Task<ICollection<CurrencyInfo>> GetCurrenciesAsync(CancellationToken cancellationToken = default);
     }
 }
