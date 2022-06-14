@@ -20,10 +20,8 @@ namespace Monobank.Client
         private const string WebhookEndpoint = "personal/webhook";
         private const string CurrencyEndpoint = "bank/currency";
         private const string TokenHeader = "X-Token";
-        private const int RequestLimit = 60; // seconds
-        private const int MaxStatementRange = 2682000; // 31 day + 1 hour
+        private readonly int MaxStatementRange = 2682000; // 31 day + 1 hour
         private readonly HttpClient _httpClient;
-        private DateTime _previousRequestTimestamp = DateTime.UtcNow.AddSeconds(-RequestLimit);
 
         public MonobankClient(HttpClient client, MonobankClientOptions options, ILogger<MonobankClient> logger)
         {
@@ -79,11 +77,6 @@ namespace Monobank.Client
                 throw new MonobankClientException("Time range exceeded. Difference between 'from' and 'to' should be less than 31 day + 1 hour.");
             }
 
-            if ((DateTime.UtcNow - _previousRequestTimestamp).TotalSeconds <= RequestLimit)
-            {
-                throw new MonobankClientException($"Request limit exceeded. Only 1 request per {RequestLimit} seconds allowed.");
-            }
-
             var uri = new Uri($"{StatementEndpoint}/{account}/{from.ToUnixTime()}/{to.ToUnixTime()}", UriKind.Relative);
             var response = await _httpClient.GetAsync(uri, cancellationToken);
             var responseString = await response.Content.ReadAsStringAsync();
@@ -92,7 +85,7 @@ namespace Monobank.Client
                 var error = JsonSerializer.Deserialize<MonobankApiError>(responseString);
                 throw new MonobankClientException(error?.Description);
             }
-            _previousRequestTimestamp = DateTime.UtcNow;
+
             return JsonSerializer.Deserialize<ICollection<Statement>>(responseString);
         }
 
