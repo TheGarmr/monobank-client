@@ -82,7 +82,7 @@ namespace Monobank.Client
             _httpClient.DefaultRequestHeaders.Add(TokenHeader, token);
 
             var requestUri = new Uri(WebhookEndpoint, UriKind.Relative);
-            var request = JsonSerializer.Serialize(new { WebHook = url });
+            var request = JsonSerializer.Serialize(new { webHookUrl = url });
             var content = new StringContent(request, Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync(requestUri, content, cancellationToken);
 
