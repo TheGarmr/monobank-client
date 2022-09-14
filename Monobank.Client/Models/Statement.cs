@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json.Serialization;
+using ISO._18245;
 using ISO._4217;
 using Monobank.Client.Extensions;
 
@@ -63,7 +64,11 @@ namespace Monobank.Client.Models
         [JsonIgnore]
         public DateTime Time => TimeInSeconds.ToDateTime();
 
+        [JsonIgnore]
+        public string MerchantCategory => MerchantCategoryCodesResolver.GetByCode(MerchantCategoryCode.ToString("D3")).Description;
+
         #endregion
+
         public static double ParseMoney(long input)
         {
             var value = input.ToString();
