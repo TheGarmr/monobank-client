@@ -16,5 +16,8 @@ namespace Monobank.Client.Models
 
         [JsonPropertyName("accounts")]
         public ICollection<Account> Accounts { get; set; }
+
+        [JsonPropertyName("jars")]
+        public ICollection<Jar> Jars { get; set; }
     }
 }

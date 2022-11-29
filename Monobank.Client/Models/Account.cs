@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using ISO._4217;
 using Monobank.Client.Enums;
+using Monobank.Client.Extensions;
 
 namespace Monobank.Client.Models
 {
@@ -28,23 +29,9 @@ namespace Monobank.Client.Models
 
         public string CurrencyName => CurrencyCodesResolver.GetCodeByNumber(CurrencyCode);
 
-        public double BalanceWithoutCreditLimit => ParseMoney(Balance - CreditLimit);
+        public double BalanceWithoutCreditLimit => (Balance - CreditLimit).AsMoney();
 
-        public double CreditLimitAsMoney => ParseMoney(CreditLimit);
+        public double CreditLimitAsMoney => CreditLimit.AsMoney();
         #endregion
-
-        public static double ParseMoney(long input)
-        {
-            var value = input.ToString();
-
-            if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
-            {
-                return 0;
-            }
-
-            var balance = value.Insert(value.Length - 2, ".");
-            var parsed = double.TryParse(balance, out var parsedValue);
-            return parsed ? parsedValue : 0;
-        }
     }
 }
