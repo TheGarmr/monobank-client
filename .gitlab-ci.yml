@@ -28,47 +28,41 @@ Deploy Feature:
   stage: deploy
   image: $DOCKER_IMAGE
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: never
     - if: $CI_COMMIT_BRANCH
       when: manual
-      changes:
-        - $PROJECT_NAME/**/*.{cs}
-        - $PROJECT_NAME/**/*.{csproj}
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: never
   script:
-    - sed -i ./$PROJECT_NAME/$PROJECT_NAME.csproj
     - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID
-    - echo "NUGET_NAME " $NUGET_NAME    
+    - echo "NUGET_NAME " $NUGET_NAME
     - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - dotnet restore
     - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
   artifacts:
     name: "$CI_COMMIT_REF_NAME"
     expire_in: 1 hrs
     paths:
-      - $CI_PROJECT_DIR/build/$PROJECT_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg
+      - $CI_PROJECT_DIR/build/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg
 
 Deploy To Nuget.org:
   stage: deploy
   image: $DOCKER_IMAGE
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: never
-    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "master"
       when: manual
-      changes:
-        - $PROJECT_NAME/**/*.{cs}
-        - $PROJECT_NAME/**/*.{csproj}
+    - if: $CI_COMMIT_BRANCH
+      when: never
   script:
-    - sed -i ./$PROJECT_NAME/$PROJECT_NAME.csproj
-    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID
-    - echo "NUGET_NAME " $NUGET_NAME    
-    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH
+    - echo "NUGET_NAME " $NUGET_NAME
+    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
-    - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
-    - dotnet nuget push ./$PROJECT_NAME/bin/Release/$PROJECT_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg -k $MONOBANK_CLIENT_NUGET_PUBLISH_KEY
+    - dotnet restore
+    - dotnet pack --no-build ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
+    - dotnet nuget push $CI_PROJECT_DIR/build/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH.symbols.nupkg -k $MONOBANK_CLIENT_NUGET_PUBLISH_KEY
   artifacts:
     name: "$CI_COMMIT_REF_NAME"
     expire_in: 1 hrs
     paths:
-      - $CI_PROJECT_DIR/build/$PROJECT_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg
+      - $CI_PROJECT_DIR/build/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH.symbols.nupkg
