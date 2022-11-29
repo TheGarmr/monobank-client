@@ -1,0 +1,74 @@
+variables:
+  DOCKER_IMAGE: mcr.microsoft.com/dotnet/sdk:3.1-alpine
+  NUGET_VERSION_MAJOR: "1"
+  NUGET_VERSION_MINOR: "1"
+  NUGET_VERSION_PATCH: "0"
+  PROJECT_NAME: "Monobank.Client"
+  NUGET_NAME: "MonobankClient"
+
+stages:
+  - build
+  - unit-tests
+  - deploy
+
+Build:
+  stage: build
+  image: $DOCKER_IMAGE
+  script:
+    - echo "Building $PROJECT_NAME..."
+    - dotnet build --configuration Release
+
+Unit tests:
+  stage: unit-tests
+  image: $DOCKER_IMAGE
+  script:
+    - dotnet test ./$PROJECT_NAME.UnitTests/$PROJECT_NAME.UnitTests.csproj
+
+Deploy Feature:
+  stage: deploy
+  image: $DOCKER_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      changes:
+        - $PROJECT_NAME/**/*.{cs}
+        - $PROJECT_NAME/**/*.{csproj}
+  script:
+    - sed -i ./$PROJECT_NAME/$PROJECT_NAME.csproj
+    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID
+    - echo "NUGET_NAME " $NUGET_NAME    
+    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME"
+    expire_in: 1 hrs
+    paths:
+      - $CI_PROJECT_DIR/build/$PROJECT_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg
+
+Deploy To Nuget.org:
+  stage: deploy
+  image: $DOCKER_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      changes:
+        - $PROJECT_NAME/**/*.{cs}
+        - $PROJECT_NAME/**/*.{csproj}
+  script:
+    - sed -i ./$PROJECT_NAME/$PROJECT_NAME.csproj
+    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID
+    - echo "NUGET_NAME " $NUGET_NAME    
+    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
+    - dotnet nuget push ./$PROJECT_NAME/bin/Release/$PROJECT_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg -k $MONOBANK_CLIENT_NUGET_PUBLISH_KEY
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME"
+    expire_in: 1 hrs
+    paths:
+      - $CI_PROJECT_DIR/build/$PROJECT_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg

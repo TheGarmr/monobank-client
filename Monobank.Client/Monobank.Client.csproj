@@ -2,15 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<PackageId>MonobankClient</PackageId>
-		<Authors>The Garmr</Authors>
-		<Company>The Garmr</Company>
-		<Description>Monobank.ua API client</Description>
-		<Copyright>Copyright 2022</Copyright>
-		<PackageProjectUrl>https://github.com/thegarmr/monobank-client</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/thegarmr/monobank-client</RepositoryUrl>
-		<PackageVersion>1.0.1</PackageVersion>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<NuspecFile>$(MSBuildProjectName).nuspec</NuspecFile>
 	</PropertyGroup>
 
 	<ItemGroup>
