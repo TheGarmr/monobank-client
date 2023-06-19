@@ -1,22 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
-  <metadata>
-    <id>__NUGET_NAME__</id>
-    <PackageId>__NUGET_NAME__</PackageId>
-    <version>__NUGET_VERSION__</version>
-    <authors>>The Garmr</authors>
-    <Company>The Garmr</Company>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Monobank.ua API client</description>
-    <Copyright>Copyright 2022</Copyright>
-    <PackageProjectUrl>https://github.com/thegarmr/monobank-client</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/thegarmr/monobank-client</RepositoryUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <dependencies>
-      <group targetFramework=".NETStandard2.1" />
-    </dependencies>
-  </metadata>
-  <files>
-    <file src="..\icon.png" target="images\" />
-  </files>
+	<metadata>
+		<id>__NUGET_NAME__</id>
+		<version>__NUGET_VERSION__</version>
+		<authors>__NUGET_PACKAGE_AUTHOR__</authors>
+		<company>__NUGET_PACKAGE_AUTHOR__</company>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>__NUGET_PACKAGE_DESCRIPTION__</description>
+		<Copyright>__NUGET_PACKAGE_COPYRIGHT__</Copyright>
+		<projectUrl>__NUGET_PACKAGE_PUBLIC_REPOSITORY__</projectUrl>
+		<repository type="git" url="__NUGET_PACKAGE_PUBLIC_REPOSITORY__" branch="master" />
+		<tags>API, monobank, bank, Monobank, client</tags>
+		<readme>docs\README.md</readme>
+		<icon>images\icon.png</icon> 
+		<dependencies>
+			<group targetFramework="netstandard2.1" >
+        		<dependency id="ISO.4217.CurrencyCodes" version="1.0.10" exclude="Build,Analyzers" />
+				<dependency id="ISO.18245.MerchantCategoryCodes" version="1.0.4" exclude="Build,Analyzers" />
+				<dependency id="Macross.Json.Extensions" version="2.0.0" exclude="Build,Analyzers" />
+			</group>
+		</dependencies>
+	</metadata>
+	<files>
+		<file src="..\icon.png" target="images\" />
+		<file src="..\README.md" target="docs\" />
+		<file src="bin\__CONFIGURATION_NAME__\netstandard2.1\__PROJECT_NAME__.dll" target="lib\netstandard2.1" />
+	</files>
 </package>
