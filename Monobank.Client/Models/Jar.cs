@@ -25,7 +25,7 @@ namespace Monobank.Client.Models
         public long Balance { get; set; }
 
         [JsonPropertyName("goal")]
-        public long Goal { get; set; }
+        public long? Goal { get; set; }
 
         #region Custom properties
 

@@ -22,5 +22,10 @@ namespace Monobank.Client.Extensions
             var parsed = double.TryParse(balance, out var parsedValue);
             return parsed ? parsedValue : 0;
         }
+
+        public static double AsMoney(this long? input)
+        {
+            return input?.AsMoney() ?? 0;
+        }
     }
 }
