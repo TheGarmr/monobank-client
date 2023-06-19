@@ -1,68 +1,136 @@
 variables:
   DOCKER_IMAGE: mcr.microsoft.com/dotnet/sdk:3.1-alpine
-  NUGET_VERSION_MAJOR: "1"
-  NUGET_VERSION_MINOR: "1"
-  NUGET_VERSION_PATCH: "0"
-  PROJECT_NAME: "Monobank.Client"
   NUGET_NAME: "MonobankClient"
+  NUGET_SOURCE: "https://api.nuget.org/v3/index.json"
+  NUGET_VERSION_MAJOR: "1"
+  NUGET_PACKAGE_AUTHOR: "The Garmr"
+  NUGET_PACKAGE_PUBLIC_REPOSITORY: "https://github.com/thegarmr/monobank-client"
+  NUGET_PACKAGE_DESCRIPTION: "Monobank.ua API client"
+  NUGET_PACKAGE_COPYRIGHT: "Copyright 2023"
+  PROJECT_NAME: "Monobank.Client"
+  SOLUTION_NAME: "Monobank.Client"
 
 stages:
   - build
   - unit-tests
-  - deploy
+  - publish
+  - tag
+  - release
 
 Build:
   stage: build
   image: $DOCKER_IMAGE
+  only:
+    - branches
+  before_script:
+    - apk update && apk add --no-cache git
   script:
-    - echo "Building $PROJECT_NAME..."
-    - dotnet build --configuration Release
+    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - dotnet build -c Debug /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID.$CI_PIPELINE_IID ./$SOLUTION_NAME.sln
 
 Unit tests:
   stage: unit-tests
   image: $DOCKER_IMAGE
+  only:
+    - branches
   script:
     - dotnet test ./$PROJECT_NAME.UnitTests/$PROJECT_NAME.UnitTests.csproj
 
-Deploy Feature:
-  stage: deploy
+Build and Deploy Feature:
+  stage: publish
   image: $DOCKER_IMAGE
-  rules:
-    - if: $CI_COMMIT_BRANCH
-      when: manual
-    - if: $CI_COMMIT_BRANCH == "master"
-      when: never
+  only:
+    - branches
+  except:
+    - main
+  before_script:
+    - apk update && apk add --no-cache git
   script:
-    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID
+    - export NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID-$CI_COMMIT_REF_NAME
     - echo "NUGET_NAME " $NUGET_NAME
-    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID-$CI_COMMIT_REF_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
-    - dotnet restore
-    - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
+    - sed -i "s|__NUGET_PACKAGE_AUTHOR__|$NUGET_PACKAGE_AUTHOR|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_DESCRIPTION__|$NUGET_PACKAGE_DESCRIPTION|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_PUBLIC_REPOSITORY__|$NUGET_PACKAGE_PUBLIC_REPOSITORY|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_COPYRIGHT__|$NUGET_PACKAGE_COPYRIGHT|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__PROJECT_NAME__|$PROJECT_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__CONFIGURATION_NAME__|Debug|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - dotnet build -c Debug /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID.$CI_PIPELINE_IID
+    - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -c Debug --include-symbols --include-source
   artifacts:
-    name: "$CI_COMMIT_REF_NAME"
+    name: "$NUGET_NAME.$CI_COMMIT_REF_NAME.$CI_PIPELINE_IID"
     expire_in: 1 hrs
     paths:
-      - $CI_PROJECT_DIR/build/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH-$CI_COMMIT_BRANCH-$CI_PIPELINE_IID.symbols.nupkg
+      - $CI_PROJECT_DIR/$PROJECT_NAME/bin/Debug/*.symbols.nupkg
+      - $CI_PROJECT_DIR/$PROJECT_NAME/bin/Debug/*.nupkg
 
-Deploy To Nuget.org:
-  stage: deploy
+Publish new version:
+  stage: publish
+  image: $DOCKER_IMAGE
+  only:
+    - main
+  when: on_success
+  before_script:
+    - apk update && apk add --no-cache git
+  script:
+    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
+    - echo "NUGET_NAME " $NUGET_NAME
+    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_AUTHOR__|$NUGET_PACKAGE_AUTHOR|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_DESCRIPTION__|$NUGET_PACKAGE_DESCRIPTION|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_PUBLIC_REPOSITORY__|$NUGET_PACKAGE_PUBLIC_REPOSITORY|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__NUGET_PACKAGE_COPYRIGHT__|$NUGET_PACKAGE_COPYRIGHT|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__PROJECT_NAME__|$PROJECT_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - sed -i "s|__CONFIGURATION_NAME__|Release|" $PROJECT_NAME/$PROJECT_NAME.nuspec
+    - dotnet restore
+    - dotnet build -c Release /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
+    - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -c Release --include-symbols --include-source
+    - dotnet nuget push --api-key "$NUGET_KEY" --source "$NUGET_SOURCE" $CI_PROJECT_DIR/$PROJECT_NAME/bin/Release/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID.symbols.nupkg
+    - dotnet nuget add source --username $GITHUB_LOGIN --password $GITHUB_KEY --store-password-in-clear-text --name github "https://nuget.pkg.github.com/$GITHUB_LOGIN/index.json"
+    - dotnet nuget push $CI_PROJECT_DIR/$PROJECT_NAME/bin/Release/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID.symbols.nupkg --api-key $GITHUB_KEY --source "github"
+
+Unpublish from Nuget:
+  stage: publish
   image: $DOCKER_IMAGE
   rules:
-    - if: $CI_COMMIT_BRANCH == "master"
-      when: manual
-    - if: $CI_COMMIT_BRANCH
-      when: never
+  only:
+    - main
+  when: manual
+  before_script:
+    - apk update && apk add --no-cache git
   script:
-    - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH
-    - echo "NUGET_NAME " $NUGET_NAME
-    - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH|" $PROJECT_NAME/$PROJECT_NAME.nuspec
-    - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
-    - dotnet restore
-    - dotnet pack --no-build ./$PROJECT_NAME/$PROJECT_NAME.csproj -o ./build -c Release --include-symbols --include-source
-    - dotnet nuget push $CI_PROJECT_DIR/build/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH.symbols.nupkg -k $MONOBANK_CLIENT_NUGET_PUBLISH_KEY
-  artifacts:
-    name: "$CI_COMMIT_REF_NAME"
-    expire_in: 1 hrs
-    paths:
-      - $CI_PROJECT_DIR/build/$NUGET_NAME.$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$NUGET_VERSION_PATCH.symbols.nupkg
+    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - dotnet nuget delete $NUGET_NAME $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID -k $NUGET_KEY --source $NUGET_SOURCE --non-interactive
+
+Tag new version:
+  stage: tag
+  only:
+    - main
+  when: on_success
+  before_script:
+    - apk update && apk add --no-cache git
+  script:
+    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - apk update && apk add git
+    - git --version
+    - git config --global user.name "${GITLAB_USERNAME}"
+    - git config --global user.email "${GITLAB_COMMIT_EMAIL}"
+    - git tag v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
+    - git push https://$GITLAB_USERNAME:$GITLAB_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
+    - git push https://$GITHUB_LOGIN:$GITHUB_PACKAGES_KEY@github.com/TheGarmr/monobank-client.git v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
+
+Publish new release to GitLab:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  only:
+    - tags
+  script:
+    - echo "Publishing new release $CI_COMMIT_TAG"
+  release:
+    name: "$CI_COMMIT_TAG"
+    description: "$CI_COMMIT_TAG"
+    tag_name: "$CI_COMMIT_TAG"
