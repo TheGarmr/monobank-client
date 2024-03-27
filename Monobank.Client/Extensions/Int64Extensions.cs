@@ -2,14 +2,14 @@
 
 namespace Monobank.Client.Extensions
 {
-    public static class Int64Extensions
+    internal static class Int64Extensions
     {
-        public static DateTime ToDateTime(this long seconds)
+        internal static DateTime ToDateTime(this long seconds)
         {
             return new DateTime(1970, 1, 1).AddSeconds(seconds);
         }
-        
-        public static double AsMoney(this long input)
+
+        internal static double AsMoney(this long input)
         {
             var value = input.ToString();
 
@@ -23,7 +23,7 @@ namespace Monobank.Client.Extensions
             return parsed ? parsedValue : 0;
         }
 
-        public static double AsMoney(this long? input)
+        internal static double AsMoney(this long? input)
         {
             return input?.AsMoney() ?? 0;
         }
