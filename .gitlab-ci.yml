@@ -5,7 +5,7 @@ variables:
   NUGET_VERSION_MAJOR: "2"
   NUGET_PACKAGE_AUTHOR: "The Garmr"
   NUGET_PACKAGE_PUBLIC_REPOSITORY: "https://github.com/thegarmr/monobank-client"
-  NUGET_PACKAGE_DESCRIPTION: "This library helps to integrate [Monobank open API](https://api.monobank.ua)(client) to your application."
+  NUGET_PACKAGE_DESCRIPTION: "This library helps to integrate Monobank open API (client) to your application."
   NUGET_PACKAGE_COPYRIGHT: "Copyright"
   PROJECT_NAME: "Monobank.Client"
   SOLUTION_NAME: "Monobank.Client"
@@ -147,8 +147,8 @@ Tag new version:
     - git config --global user.name "${GITLAB_USERNAME}"
     - git config --global user.email "${GITLAB_COMMIT_EMAIL}"
     - git tag v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
-    - git push https://$GITLAB_USERNAME:$GITLAB_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
     - git push https://$GITHUB_LOGIN:$GITHUB_PACKAGES_KEY@github.com/TheGarmr/monobank-client.git v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
+    - git push https://$GITLAB_USERNAME:$GITLAB_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git v$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
 
 Publish new release to GitLab:
   stage: release

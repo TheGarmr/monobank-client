@@ -11,7 +11,7 @@
 		<projectUrl>__NUGET_PACKAGE_PUBLIC_REPOSITORY__</projectUrl>
 		<repository type="git" url="__NUGET_PACKAGE_PUBLIC_REPOSITORY__" branch="master" />
 		<tags>API, monobank, bank, Monobank, client</tags>
-		<readme>docs\README.md</readme>
+		<readme>docs\README.nuget.md</readme>
 		<icon>images\icon.png</icon> 
 		<dependencies>
 			<group targetFramework="net7.0">
@@ -23,7 +23,7 @@
 	</metadata>
 	<files>
 		<file src="..\icon.png" target="images\" />
-		<file src="..\README.md" target="docs\" />
+		<file src="..\README.nuget.md" target="docs\" />
 		<file src="bin\__CONFIGURATION_NAME__\net7.0\__PROJECT_NAME__.dll" target="lib\net7.0" />
 	</files>
 </package>
