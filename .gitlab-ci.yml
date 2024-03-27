@@ -1,12 +1,12 @@
 variables:
-  DOCKER_IMAGE: mcr.microsoft.com/dotnet/sdk:3.1-alpine
+  DOCKER_IMAGE: mcr.microsoft.com/dotnet/sdk:7.0-alpine
   NUGET_NAME: "MonobankClient"
   NUGET_SOURCE: "https://api.nuget.org/v3/index.json"
-  NUGET_VERSION_MAJOR: "1"
+  NUGET_VERSION_MAJOR: "2"
   NUGET_PACKAGE_AUTHOR: "The Garmr"
   NUGET_PACKAGE_PUBLIC_REPOSITORY: "https://github.com/thegarmr/monobank-client"
-  NUGET_PACKAGE_DESCRIPTION: "Monobank.ua API client"
-  NUGET_PACKAGE_COPYRIGHT: "Copyright 2023"
+  NUGET_PACKAGE_DESCRIPTION: "This library helps to integrate [Monobank open API](https://api.monobank.ua)(client) to your application."
+  NUGET_PACKAGE_COPYRIGHT: "Copyright"
   PROJECT_NAME: "Monobank.Client"
   SOLUTION_NAME: "Monobank.Client"
 
@@ -25,8 +25,13 @@ Build:
   before_script:
     - apk update && apk add --no-cache git
   script:
-    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
-    - dotnet build -c Debug /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID.$CI_PIPELINE_IID ./$SOLUTION_NAME.sln
+    - CURRENT_NUGET_VERSION_MAJOR=$(git describe --tag --abbrev=0 | cut -d"." -f1 | sed 's/^v//')
+    - if [ "$CURRENT_NUGET_VERSION_MAJOR" -lt "$NUGET_VERSION_MAJOR" ]; then
+    -   NUGET_VERSION_MINOR=0
+    - else
+    -   NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - fi
+    - dotnet build -c Debug /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID ./$SOLUTION_NAME.sln
 
 Unit tests:
   stage: unit-tests
@@ -36,7 +41,7 @@ Unit tests:
   script:
     - dotnet test ./$PROJECT_NAME.UnitTests/$PROJECT_NAME.UnitTests.csproj
 
-Build and Deploy Feature:
+Build Feature:
   stage: publish
   image: $DOCKER_IMAGE
   only:
@@ -46,9 +51,15 @@ Build and Deploy Feature:
   before_script:
     - apk update && apk add --no-cache git
   script:
-    - export NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - CURRENT_NUGET_VERSION_MAJOR=$(git describe --tag --abbrev=0 | cut -d"." -f1 | sed 's/^v//')
+    - if [ "$CURRENT_NUGET_VERSION_MAJOR" -lt "$NUGET_VERSION_MAJOR" ]; then
+    -   NUGET_VERSION_MINOR=0
+    - else
+    -   NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - fi
     - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID-$CI_COMMIT_REF_NAME
     - echo "NUGET_NAME " $NUGET_NAME
+    - NUGET_PACKAGE_COPYRIGHT="${NUGET_PACKAGE_COPYRIGHT} $(date +'%Y')"
     - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID-$CI_COMMIT_REF_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_PACKAGE_AUTHOR__|$NUGET_PACKAGE_AUTHOR|" $PROJECT_NAME/$PROJECT_NAME.nuspec
@@ -57,7 +68,7 @@ Build and Deploy Feature:
     - sed -i "s|__NUGET_PACKAGE_COPYRIGHT__|$NUGET_PACKAGE_COPYRIGHT|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__PROJECT_NAME__|$PROJECT_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__CONFIGURATION_NAME__|Debug|" $PROJECT_NAME/$PROJECT_NAME.nuspec
-    - dotnet build -c Debug /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID.$CI_PIPELINE_IID
+    - dotnet build -c Debug /p:version=$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
     - dotnet pack --no-build --no-restore ./$PROJECT_NAME/$PROJECT_NAME.csproj -c Debug --include-symbols --include-source
   artifacts:
     name: "$NUGET_NAME.$CI_COMMIT_REF_NAME.$CI_PIPELINE_IID"
@@ -75,9 +86,15 @@ Publish new version:
   before_script:
     - apk update && apk add --no-cache git
   script:
-    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - CURRENT_NUGET_VERSION_MAJOR=$(git describe --tag --abbrev=0 | cut -d"." -f1 | sed 's/^v//')
+    - if [ "$CURRENT_NUGET_VERSION_MAJOR" -lt "$NUGET_VERSION_MAJOR" ]; then
+    -   NUGET_VERSION_MINOR=0
+    - else
+    -   NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - fi
     - echo "NUGET VERSION " $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID
     - echo "NUGET_NAME " $NUGET_NAME
+    - NUGET_PACKAGE_COPYRIGHT="${NUGET_PACKAGE_COPYRIGHT} $(date +'%Y')"
     - sed -i "s|__NUGET_VERSION__|$NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_NAME__|$NUGET_NAME|" $PROJECT_NAME/$PROJECT_NAME.nuspec
     - sed -i "s|__NUGET_PACKAGE_AUTHOR__|$NUGET_PACKAGE_AUTHOR|" $PROJECT_NAME/$PROJECT_NAME.nuspec
@@ -103,7 +120,12 @@ Unpublish from Nuget:
   before_script:
     - apk update && apk add --no-cache git
   script:
-    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - CURRENT_NUGET_VERSION_MAJOR=$(git describe --tag --abbrev=0 | cut -d"." -f1 | sed 's/^v//')
+    - if [ "$CURRENT_NUGET_VERSION_MAJOR" -lt "$NUGET_VERSION_MAJOR" ]; then
+    -   NUGET_VERSION_MINOR=0
+    - else
+    -   NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - fi
     - dotnet nuget delete $NUGET_NAME $NUGET_VERSION_MAJOR.$NUGET_VERSION_MINOR.$CI_PIPELINE_IID -k $NUGET_KEY --source $NUGET_SOURCE --non-interactive
 
 Tag new version:
@@ -114,7 +136,12 @@ Tag new version:
   before_script:
     - apk update && apk add --no-cache git
   script:
-    - NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - CURRENT_NUGET_VERSION_MAJOR=$(git describe --tag --abbrev=0 | cut -d"." -f1 | sed 's/^v//')
+    - if [ "$CURRENT_NUGET_VERSION_MAJOR" -lt "$NUGET_VERSION_MAJOR" ]; then
+    -   NUGET_VERSION_MINOR=0
+    - else
+    -   NUGET_VERSION_MINOR=$(git describe --tag --abbrev=0 | cut -d"." -f3 | awk '{print $1 + 1}')
+    - fi
     - apk update && apk add git
     - git --version
     - git config --global user.name "${GITLAB_USERNAME}"
