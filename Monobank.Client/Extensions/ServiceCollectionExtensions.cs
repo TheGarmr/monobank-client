@@ -30,7 +30,7 @@ namespace Monobank.Client.Extensions
             services
                 .AddOptions<MonobankClientOptions>()
                 .Configure(optionsFactory)
-                .Validate(options => ValidateOptions(options, false), GetOptionsValidationFailMessage(false))
+                .Validate(options => ValidateOptions(options, true), GetOptionsValidationFailMessage(monobankOptions, true))
                 .ValidateOnStart();
 
             services.AddHttpClient<IMonobankClient, MonobankClient>(HttpClientSetup(monobankOptions));
@@ -54,7 +54,7 @@ namespace Monobank.Client.Extensions
             services
                 .AddOptions<MonobankClientOptions>()
                 .Configure(optionsFactory)
-                .Validate(options => ValidateOptions(options, false), GetOptionsValidationFailMessage(false))
+                .Validate(options => ValidateOptions(options, false), GetOptionsValidationFailMessage(monobankOptions, false))
                 .ValidateOnStart();
 
             services.AddHttpClient<IMonobankClient, MonobankClient>(HttpClientSetup(monobankOptions));
@@ -106,13 +106,29 @@ namespace Monobank.Client.Extensions
                    && !singleClient || !string.IsNullOrWhiteSpace(options.ApiToken);
         }
 
-        private static string GetOptionsValidationFailMessage(bool singleClient)
+        private static string GetOptionsValidationFailMessage(MonobankClientOptions options, bool singleClient)
         {
-            var apiTokenPropertyMessage = singleClient ? $" {nameof(MonobankClientOptions.ApiToken)} musn't be empty," : string.Empty;
-            return $"{nameof(MonobankClientOptions)} are invalid." +
-                   $" {nameof(MonobankClientOptions.ApiBaseUrl)} musn't be empty," +
-                   $"{apiTokenPropertyMessage}" +
-                   $" {nameof(MonobankClientOptions.HttpClientTimeoutInSeconds)} should have at least 1 second";
+            var message = $"{nameof(MonobankClientOptions)} are invalid." + Environment.NewLine;
+
+            if (string.IsNullOrWhiteSpace(options.ApiBaseUrl))
+            {
+                message += $"{nameof(MonobankClientOptions.ApiBaseUrl)} can't be empty, but does" + Environment.NewLine;
+            }
+
+            if (options.HttpClientTimeoutInSeconds <= 0)
+            {
+                message += $"{nameof(MonobankClientOptions.HttpClientTimeoutInSeconds)} should have at least 1 second, but have {options.HttpClientTimeoutInSeconds}" + Environment.NewLine;
+            }
+
+            if (singleClient)
+            {
+                if (string.IsNullOrWhiteSpace(options.ApiToken))
+                {
+                    message += $"{nameof(MonobankClientOptions.ApiToken)} can't be empty, but does";
+                }
+            }
+
+            return message;
         }
     }
 }
