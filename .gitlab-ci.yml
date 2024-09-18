@@ -1,5 +1,5 @@
 variables:
-  DOCKER_IMAGE: mcr.microsoft.com/dotnet/sdk:7.0-alpine
+  DOCKER_IMAGE: mcr.microsoft.com/dotnet/sdk:8.0-alpine
   NUGET_NAME: "MonobankClient"
   NUGET_SOURCE: "https://api.nuget.org/v3/index.json"
   NUGET_VERSION_MAJOR: "2"

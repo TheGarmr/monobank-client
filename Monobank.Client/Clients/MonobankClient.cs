@@ -11,61 +11,70 @@ using System.Text;
 
 namespace Monobank.Client.Clients
 {
-    internal class MonobankClient : IMonobankClient
+    internal class MonobankClient(HttpClient httpClient) : IMonobankClient
     {
         private const string ClientInfoEndpoint = "personal/client-info";
         private const string StatementEndpoint = "personal/statement";
         private const string WebhookEndpoint = "personal/webhook";
         private const string CurrencyEndpoint = "bank/currency";
         private const string TokenHeader = "X-Token";
-        private readonly HttpClient _httpClient;
 
-        public MonobankClient(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-        
         public async Task<ClientInfo> GetClientInfoAsync(string token, CancellationToken cancellationToken = default)
         {
-            UpdateAuthHeader(token);
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw MonobankClientInvalidTokenException.Create("Токен відсутній");
+            }
 
+            UpdateAuthHeader(token);
+            
             var requestUri = new Uri(ClientInfoEndpoint, UriKind.Relative);
-            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+            var response = await httpClient.GetAsync(requestUri, cancellationToken);
             return await HandleResponse<ClientInfo>(response);
         }
 
         public async Task<bool> SetWebhookAsync(string url, string token, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw MonobankClientInvalidTokenException.Create("ApiToken відсутній");
+            }
+
             UpdateAuthHeader(token);
 
             var requestUri = new Uri(WebhookEndpoint, UriKind.Relative);
             var request = JsonSerializer.Serialize(new { webHookUrl = url });
             var content = new StringContent(request, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(requestUri, content, cancellationToken);
+            var response = await httpClient.PostAsync(requestUri, content, cancellationToken);
 
             return response.IsSuccessStatusCode;
         }
 
         public async Task<ICollection<Statement>> GetStatementsAsync(string token, int from, int to, string cardId, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw MonobankClientInvalidTokenException.Create("ApiToken відсутній");
+            }
+
             UpdateAuthHeader(token);
 
             var uri = new Uri($"{StatementEndpoint}/{cardId}/{from}/{to}", UriKind.Relative);
-            var response = await _httpClient.GetAsync(uri, cancellationToken);
+            var response = await httpClient.GetAsync(uri, cancellationToken);
             return await HandleResponse<ICollection<Statement>>(response);
         }
 
         public async Task<ICollection<CurrencyInfo>> GetCurrenciesAsync(CancellationToken cancellationToken = default)
         {
             var uri = new Uri($"{CurrencyEndpoint}", UriKind.Relative);
-            var response = await _httpClient.GetAsync(uri, cancellationToken);
+            var response = await httpClient.GetAsync(uri, cancellationToken);
             return await HandleResponse<ICollection<CurrencyInfo>>(response);
         }
 
         private void UpdateAuthHeader(string token)
         {
-            _httpClient.DefaultRequestHeaders.Remove(TokenHeader);
-            _httpClient.DefaultRequestHeaders.Add(TokenHeader, token);
+            httpClient.DefaultRequestHeaders.Remove(TokenHeader);
+            httpClient.DefaultRequestHeaders.Add(TokenHeader, token);
         }
 
         private static async Task<T> HandleResponse<T>(HttpResponseMessage response)
@@ -75,6 +84,11 @@ namespace Monobank.Client.Clients
             {
                 var error = JsonSerializer.Deserialize<MonobankApiError>(responseString);
                 throw MonobankClientApiException.Create(error?.Description);
+            }
+
+            if (responseString.Contains("Помилка завантаження"))
+            {
+                throw MonobankClientApiException.Create("Невідома помилка завантаження");
             }
 
             return JsonSerializer.Deserialize<T>(responseString);

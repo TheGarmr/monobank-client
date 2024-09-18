@@ -14,7 +14,7 @@
 		<readme>docs\README.nuget.md</readme>
 		<icon>images\icon.png</icon> 
 		<dependencies>
-			<group targetFramework="net7.0">
+			<group targetFramework="net8.0">
     			<dependency id="ISO.4217.CurrencyCodes" version="1.0.10" exclude="Build,Analyzers" />
     			<dependency id="ISO.18245.MerchantCategoryCodes" version="1.0.4" exclude="Build,Analyzers" />
     			<dependency id="Macross.Json.Extensions" version="3.0.0" exclude="Build,Analyzers" />
@@ -24,6 +24,6 @@
 	<files>
 		<file src="..\icon.png" target="images\" />
 		<file src="..\README.nuget.md" target="docs\" />
-		<file src="bin\__CONFIGURATION_NAME__\net7.0\__PROJECT_NAME__.dll" target="lib\net7.0" />
+		<file src="bin\__CONFIGURATION_NAME__\net8.0\__PROJECT_NAME__.dll" target="lib\net8.0" />
 	</files>
 </package>

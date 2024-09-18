@@ -1,4 +1,4 @@
-# MonobankClient<br>
+# MonobankClient
 
 ### This library helps to integrate [Monobank open API](https://api.monobank.ua)(client) to your application.
 ### Full API documentation can be found here: [Monobank open API](https://api.monobank.ua/docs/)
