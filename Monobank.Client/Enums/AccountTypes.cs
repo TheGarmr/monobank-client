@@ -25,6 +25,9 @@ namespace Monobank.Client.Enums
         Yellow = 6,
 
         [EnumMember(Value = "eAid")]
-        EPidtrimka
+        EPidtrimka = 7,
+
+        [EnumMember(Value = "madeInUkraine")]
+        MadeInUkraine = 8
     }
 }
